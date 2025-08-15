@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+
+message ProtobufInner_pb {
+    int32 a = 1;
+}
+
+message ProtobufTest_pb {
+    int32 i32 = 1;
+    int64 i64 = 2;
+    uint32 ui32 = 3;
+    uint64 ui64 = 4;
+    string s = 5;
+    float f = 6;
+    double d = 7;
+    map<int32, string> map = 8;
+    oneof oneof { 
+        int32 oneofInt1 = 9;
+        double oneofInt2 = 10;
+        string oneofInt3 = 11;
+        ProtobufInner_pb oneofInt4 = 12;
+    }
+    oneof oneofInner { 
+        int32 oneofInner1 = 13;
+        double oneofInner2 = 14;
+        string oneofInner3 = 15;
+        ProtobufInner_pb oneofInner4 = 16;
+    }
+    optional string optional = 17;
+    ProtobufInner_pb inner = 18;
+    repeated ProtobufInner_pb repeated = 19;
+    repeated int32 repeated_int = 20;
+    map<int32, ProtobufInner_pb> complex_map = 21;
+};

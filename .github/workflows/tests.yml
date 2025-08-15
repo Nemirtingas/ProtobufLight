@@ -1,0 +1,61 @@
+name: C++ ProtobufLight Tests
+
+on:
+  push:
+    # on any push
+  pull_request:
+    # on pull request
+  workflow_dispatch:
+    # allows manual trigger
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Set vcpkg triplet
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            echo "TRIPLET=x64-windows" >> $GITHUB_ENV
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            echo "TRIPLET=x64-linux" >> $GITHUB_ENV
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            echo "TRIPLET=x64-osx" >> $GITHUB_ENV
+          fi
+
+      - name: vcpkg build
+        uses: johnwason/vcpkg-action@v7
+        with:
+          pkgs: protobuf
+          triplet: ${{ env.TRIPLET }}
+          token: ${{ github.token }}
+
+      - name: Generate protobuf files
+        run: python bin/protobuflight_protoc.py test/protobuflight.proto test/protobuflight.pb.h
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DPROTOBUF_LIGHT_ENABLE_TESTS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: find .; build/ProtobufLightTests
