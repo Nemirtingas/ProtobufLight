@@ -114,58 +114,6 @@ class Message:
         self.nested = []      # can contain Enum and Message
         self.package = None
 
-    def cpp_struct(self):
-        lines = []
-        lines.append(f"struct {self.name}")
-        lines.append("{")
-        # nested enums/messages
-        for n in self.nested:
-            if isinstance(n, Enum):
-                for l in n.cpp_enum(indent=0).splitlines():
-                    lines.append("    " + l)
-                lines.append("")
-            elif isinstance(n, Message):
-                for l in n.cpp_struct().splitlines():
-                    lines.append("    " + l)
-                lines.append("")
-
-        # regular fields
-        for f in self.fields:
-            lines.append(f"    {f.member_decl()}")
-        # oneofs
-        for oneof in self.oneofs:
-            vt = oneof.variant_type_list()
-            if vt:
-                joined = ", ".join(vt)
-                lines.append(f"    std::variant<std::monostate, {joined}> {oneof.name}{{ std::monostate{{}} }};")
-        lines.append("")
-        lines.append("    size_t GetByteSize() const { return ProtobufLight::Reflection::SerializedStructSize(*this); }")
-        lines.append("    bool ParseFromArray(const uint8_t* buffer, size_t size) { return ProtobufLight::Reflection::ParseStruct(*this, buffer, size); }")
-        lines.append("    std::string SerializeAsString() const { std::string out; ProtobufLight::Reflection::SerializeStruct(*this, out); return out; }")
-        lines.append("")
-        lines.append("};")
-        return "\n".join(lines)
-
-    def trait_specialization(self):
-        lines = []
-        lines.append("template<>")
-        lines.append(f"struct ProtobufLight::Reflection::ProtobufTrait<{self.name}>")
-        lines.append("{")
-        lines.append("    template<typename Obj, typename Callback>")
-        lines.append("    static void ForEachField(Obj& obj, Callback&& cb) {")
-        for f in self.fields:
-            if f.number is None:
-                continue
-            lines.append(f'        cb(obj.{f.name}, FieldMeta<{f.number}>{{"{f.name}"}});')
-        for oneof in self.oneofs:
-            if not oneof.fields:
-                continue
-            nums = ",".join(str(f.number) for f in oneof.fields)
-            lines.append(f'        cb(obj.{oneof.name}, FieldMeta<{nums}>{{"{oneof.name}"}});')
-        lines.append("    }")
-        lines.append("};")
-        return "\n".join(lines)
-
 # ---- Parsing logic ---------------------------------------------------------
 def parse_proto_file(path: Path, visited=None):
     if visited is None:
@@ -271,6 +219,65 @@ def parse_proto_file(path: Path, visited=None):
     return messages, enums, imports
 
 # ---- Code generation -------------------------------------------------------
+def emit_message(msg: Message, f, indent=0):
+    sp = " " * indent
+    # struct header
+    f.write(f"{sp}struct {msg.name}\n{sp}{{\n")
+
+    # nested types
+    for n in msg.nested:
+        if isinstance(n, Enum):
+            f.write(n.cpp_enum(indent=indent+4) + "\n\n")
+        elif isinstance(n, Message):
+            emit_message(n, f, indent+4)
+            f.write("\n")
+
+    # fields
+    for fld in msg.fields:
+        f.write(f"{sp}    {fld.member_decl()}\n")
+
+    # oneofs
+    for oneof in msg.oneofs:
+        vt = oneof.variant_type_list()
+        if vt:
+            joined = ", ".join(vt)
+            f.write(f"{sp}    std::variant<std::monostate, {joined}> {oneof.name}{{ std::monostate{{}} }};\n")
+
+    # methods
+    f.write(f"""
+{sp}    size_t GetByteSize() const {{ return ProtobufLight::Reflection::SerializedStructSize(*this); }}
+{sp}    bool ParseFromArray(const uint8_t* buffer, size_t size) {{ return ProtobufLight::Reflection::ParseStruct(*this, buffer, size); }}
+{sp}    std::string SerializeAsString() const {{ std::string out; ProtobufLight::Reflection::SerializeStruct(*this, out); return out; }}
+{sp}}};
+""")
+
+def emit_traits(msg: Message, f, prefix=""):
+    full_name = f"{prefix}::{msg.name}" if prefix else msg.name
+
+    f.write("template<>\n")
+    f.write(f"struct ProtobufLight::Reflection::ProtobufTrait<{full_name}>\n")
+    f.write("{\n")
+    f.write("    template<typename Obj, typename Callback>\n")
+    f.write("    static void ForEachField(Obj& obj, Callback&& cb) {\n")
+
+    for fld in msg.fields:
+        if fld.number is None:
+            continue
+        f.write(f'        cb(obj.{fld.name}, FieldMeta<{fld.number}>{{"{fld.name}"}});\n')
+
+    for oneof in msg.oneofs:
+        if not oneof.fields:
+            continue
+        nums = ",".join(str(f.number) for f in oneof.fields)
+        f.write(f'        cb(obj.{oneof.name}, FieldMeta<{nums}>{{"{oneof.name}"}});\n')
+
+    f.write("    }\n};\n\n")
+
+    # recurse into nested messages
+    for n in msg.nested:
+        if isinstance(n, Message):
+            emit_traits(n, f, prefix=full_name)
+
 def generate_header(messages: dict, enums: dict, imports, out_path: Path):
     with out_path.open("w", encoding="utf-8") as f:
         f.write("// Auto-generated from .proto\n")
@@ -286,12 +293,12 @@ def generate_header(messages: dict, enums: dict, imports, out_path: Path):
             f.write(en.cpp_enum() + "\n\n")
 
         # messages
-        for name, msg in messages.items():
-            f.write(msg.cpp_struct() + "\n\n")
+        for msg in messages.values():
+            emit_message(msg, f)
+            f.write("\n")
 
-        # trait specializations for messages
-        for name, msg in messages.items():
-            f.write(msg.trait_specialization() + "\n\n")
+        for msg in messages.values():
+            emit_traits(msg, f)
 
 def main():
     if len(sys.argv) != 3:

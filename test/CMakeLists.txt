@@ -11,12 +11,8 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS protobuf.proto)
-
 add_executable(ProtobufLightTests
     main.cpp
-    ${PROTO_SRCS}
-    ${PROTO_HDRS}
 )
 
 target_link_libraries(ProtobufLightTests

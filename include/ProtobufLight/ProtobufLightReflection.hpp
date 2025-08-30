@@ -212,14 +212,14 @@ size_t SerializedFieldSize(uint32_t fieldNumber, T&& value, bool isVariant)
         if (!isVariant && value.empty())
             return serializedSize;
 
-        if constexpr (ProtobufLight::Detail::is_std_map_v<DecayT> ||
-            ProtobufLight::Detail::is_byte_container_v<DecayT> ||
-            ProtobufLight::Detail::is_std_optional_v<DecayT>)
+        if constexpr (ProtobufLight::Detail::is_std_map_v<DecayItemT> ||
+            ProtobufLight::Detail::is_std_optional_v<DecayItemT>)
         {
             static_assert(sizeof(T) == 0, "Unsupported repeated field type");
         }
         // Message are serialized as multiple messages with the same fieldNumber
-        else if constexpr (ProtobufLight::Reflection::Detail::has_protobuf_trait_v<DecayItemT>)
+        else if constexpr (ProtobufLight::Reflection::Detail::has_protobuf_trait_v<DecayItemT> ||
+            ProtobufLight::Detail::is_byte_container_v<DecayItemT>)
         {
             // SerializedFieldSize already has the key
             for (auto&& item : value)
@@ -364,7 +364,7 @@ std::enable_if_t<ProtobufLight::Detail::is_appendable_byte_container_v<Container
     else if constexpr (ProtobufLight::Detail::is_std_optional_v<DecayT>)
     {
         if (value.has_value())
-            SerializeField(fieldNumber, value.value(), out, false);
+            SerializeField(fieldNumber, value.value(), out, true);
     }
     else if constexpr (ProtobufLight::Detail::is_std_vector_v<DecayT>)
     {
@@ -373,14 +373,14 @@ std::enable_if_t<ProtobufLight::Detail::is_appendable_byte_container_v<Container
         if (!isVariant && value.empty())
             return;
 
-        if constexpr (ProtobufLight::Detail::is_std_map_v<DecayT> ||
-                      ProtobufLight::Detail::is_byte_container_v<DecayT> ||
-                      ProtobufLight::Detail::is_std_optional_v<DecayT>)
+        if constexpr (ProtobufLight::Detail::is_std_map_v<DecayItemT> ||
+                      ProtobufLight::Detail::is_std_optional_v<DecayItemT>)
         {
             static_assert(sizeof(T) == 0, "Unsupported repeated field type");
         }
         // Message are serialized as multiple messages with the same fieldNumber
-        else if constexpr (ProtobufLight::Reflection::Detail::has_protobuf_trait_v<DecayItemT>)
+        else if constexpr (ProtobufLight::Reflection::Detail::has_protobuf_trait_v<DecayItemT> ||
+            ProtobufLight::Detail::is_byte_container_v<DecayItemT>)
         {
             for (auto&& item : value)
                 SerializeField(fieldNumber, item, out, false);
@@ -492,6 +492,11 @@ bool ParseField(uint32_t fieldNumber, uint8_t wireType, const uint8_t* buf, size
         {
             auto& v = value.emplace_back(ElemT{});
             return ParseStruct(v, reinterpret_cast<const uint8_t*>(innerBuf.data()), innerBuf.size());
+        }
+        else if constexpr (ProtobufLight::Detail::is_byte_container_v<ElemT>)
+        {
+            auto& v = value.emplace_back(innerBuf.begin(), innerBuf.end());
+            return true;
         }
         else
         {
