@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message Leaf {
+  int64 id = 1;
+}
+
+message Mid {
+  Leaf leaf = 1;
+  repeated Leaf leaves = 2;
+}
+
+message Outer {
+  Mid mid = 1;
+  repeated Mid mids = 2;
+}
+
+message NestedAll {
+  Outer root = 1;
+  repeated Outer forest = 2;
+}

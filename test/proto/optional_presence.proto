@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+enum OptEnum {
+  OPT_ZERO = 0;
+  OPT_ONE  = 1;
+}
+
+message OptionalPresence {
+  optional int32   o_int32  = 1;
+  optional string  o_string = 2;
+  optional OptEnum o_enum   = 3;
+
+  message HasPresence {
+    int32 x = 1;
+  }
+  HasPresence msg = 10;
+}

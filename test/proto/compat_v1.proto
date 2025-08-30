@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message CompatV1 {
+  int32  a = 1;
+  string b = 2;
+}

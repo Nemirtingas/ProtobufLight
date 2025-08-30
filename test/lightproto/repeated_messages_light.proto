@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message ItemLight {
+  int32  id   = 1;
+  string name = 2;
+}
+
+message WrapperLight {
+  ItemLight single = 1;
+  repeated ItemLight many = 2;
+}
+
+message RepeatedMessagesLight {
+  repeated ItemLight items = 1;
+  repeated WrapperLight wrappers = 2;
+}

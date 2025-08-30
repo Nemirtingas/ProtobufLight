@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message MapsScalarsLight {
+  map<string, int32>   m_str_i32  = 1;
+  map<int32, string>   m_i32_str  = 2;
+  map<int64, uint64>   m_i64_u64  = 3;
+  map<uint32, sint32>  m_u32_s32  = 4;
+}

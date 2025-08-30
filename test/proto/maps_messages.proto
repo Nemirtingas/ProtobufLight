@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+// Maps de MESSAGE (valeurs message simples et imbriquées)
+message Val {
+  int32  a = 1;
+  string b = 2;
+}
+
+message InnerVal {
+  Val v = 1;
+}
+
+message MapsMessages {
+  map<string, Val>        m_str_msg   = 1;
+  map<int32, Val>         m_i32_msg   = 2;
+  map<int64, InnerVal>    m_i64_inner = 3;
+}

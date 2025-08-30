@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message OneMsgLight {
+  int32 id = 1;
+}
+
+enum OneEnumLight {
+  O_ZERO = 0;
+  O_ONE  = 1;
+}
+
+message OneOfAllLight {
+  oneof choice {
+    int32       o_int32 = 1;
+    //string      o_str   = 2;
+    bytes       o_bytes = 3;
+    OneMsgLight o_msg   = 4;
+    OneEnumLight o_enum = 5;
+  }
+}

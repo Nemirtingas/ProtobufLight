@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+enum ReEnumLight {
+  R_ZERO = 0;
+  R_ONE  = 1;
+  R_TWO  = 2;
+}
+
+message RepeatedScalarsLight {
+  repeated int32   r_int32_default_packed = 1;
+  repeated sint32  r_sint32_unpacked      = 2 [packed=false];
+  repeated fixed32 r_fixed32_packed       = 3;
+  repeated double  r_double_unpacked      = 4 [packed=false];
+  repeated ReEnumLight  r_enums_default_packed = 5;
+  repeated string  r_strings              = 6;
+  repeated bytes   r_bytes                = 7;
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message Item {
+  int32  id   = 1;
+  string name = 2;
+}
+
+message Wrapper {
+  Item   single = 1;
+  repeated Item many = 2;
+}
+
+message RepeatedMessages {
+  repeated Item items = 1;
+  repeated Wrapper wrappers = 2;
+}

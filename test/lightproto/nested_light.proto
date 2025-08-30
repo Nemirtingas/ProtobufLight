@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message LeafLight {
+	int64 id = 1;
+}
+
+message MidLight {
+  LeafLight leaf = 1;
+  repeated LeafLight leaves = 2;
+}
+
+message OuterLight {
+  MidLight mid = 1;
+  repeated MidLight mids = 2;
+}
+
+message NestedAllLight {
+  OuterLight root = 1;
+  repeated OuterLight forest = 2;
+}

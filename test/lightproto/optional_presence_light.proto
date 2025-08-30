@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+enum OptEnumLight {
+  OPT_ZERO = 0;
+  OPT_ONE  = 1;
+}
+
+message OptionalPresenceLight {
+  optional int32       o_int32  = 1;
+  optional string      o_string = 2;
+  optional OptEnumLight o_enum  = 3;
+
+  message HasPresenceLight {
+    int32 x = 1;
+  }
+  HasPresenceLight msg = 10;
+}

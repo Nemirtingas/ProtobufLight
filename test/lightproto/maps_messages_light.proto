@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message ValLight {
+  int32  a = 1;
+  string b = 2;
+}
+
+message InnerValLight {
+  ValLight v = 1;
+}
+
+message MapsMessagesLight {
+  map<string, ValLight>     m_str_msg   = 1;
+  map<int32, ValLight>      m_i32_msg   = 2;
+  map<int64, InnerValLight> m_i64_inner = 3;
+}
